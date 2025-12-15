@@ -1,0 +1,83 @@
+# ==================== Dockerfile.build (内网版本) ====================
+# 微信小程序 CI - 构建阶段镜像
+# 目标：生成构建产物（dist + build-info.json）
+# 输出：构建产物 .tar.gz，上传到制品库
+#
+# 使用说明：
+#   docker build -f private/Dockerfile.build \
+#     --build-arg BUILD_VERSION="1.0.0" \
+#     --build-arg BUILD_MODE="production" \
+#     -t miniprogram-builder:latest .
+
+# ==================== 阶段 1: 构建阶段 ====================
+# 使用科大讯飞内网镜像源
+FROM artifacts.iflytek.com/cbg-docker-private/xfyun_webdev/node:20-alpine AS builder
+
+LABEL maintainer="yedai@iflytek.com"
+LABEL description="微信小程序 CI 构建镜像（内网版）"
+
+# alpine 需要安装 libc6-compat 以兼容某些 npm 包
+RUN apk add --no-cache libc6-compat git
+
+WORKDIR /build
+
+# ===== 构建参数 =====
+ARG BUILD_VERSION
+ARG BUILD_DESCRIPTION
+ARG GIT_BRANCH
+ARG GIT_COMMIT
+ARG BUILD_MODE=production
+
+# 设置内网 npm 镜像（如有）
+# RUN npm config set registry http://npm.iflytek.com/
+
+# ===== 依赖安装（利用 Docker 层缓存）=====
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# ===== 复制源码和配置 =====
+COPY src ./src
+COPY config ./config
+COPY scripts ./scripts
+COPY project.config.json tsconfig.json ./
+
+# ===== 生成构建信息 =====
+RUN node scripts/generate-build-info.js \
+    --version "${BUILD_VERSION}" \
+    --description "${BUILD_DESCRIPTION}" \
+    --git-branch "${GIT_BRANCH}" \
+    --git-commit "${GIT_COMMIT}"
+
+# ===== 执行 Taro 构建 =====
+RUN if [ "$BUILD_MODE" = "pre" ] || [ "$BUILD_MODE" = "test" ]; then \
+      echo "执行预发布/测试构建: npm run build:pre"; \
+      npm run build:pre; \
+    else \
+      echo "执行生产构建: npm run build"; \
+      npm run build; \
+    fi
+
+# ===== 复制构建信息到 dist =====
+RUN npm run copy:build-info || cp build-info.json dist/ 2>/dev/null || true
+
+# ==================== 阶段 2: 打包制品 ====================
+FROM artifacts.iflytek.com/cbg-docker-private/xfyun_webdev/node:20-alpine AS packager
+
+WORKDIR /artifact
+
+# 只复制必要的文件（最小化制品体积）
+COPY --from=builder /build/dist ./dist
+COPY --from=builder /build/build-info.json ./
+COPY --from=builder /build/project.config.json ./
+COPY --from=builder /build/scripts ./scripts
+COPY --from=builder /build/config ./config
+COPY --from=builder /build/package.json ./
+
+# 生成制品压缩包
+RUN tar -czf /build-artifact.tar.gz .
+
+# 创建输出目录
+RUN mkdir -p /output
+
+# 默认入口：将制品复制到挂载的输出目录
+ENTRYPOINT ["sh", "-c", "cp /build-artifact.tar.gz /output/ && echo '制品已导出到 /output/build-artifact.tar.gz'"]

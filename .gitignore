@@ -1,0 +1,40 @@
+# ==================== Git 忽略文件 ====================
+
+# 依赖目录
+node_modules/
+
+# 构建输出
+dist/
+build/
+output/
+logs/
+*.tar.gz
+*.zip
+
+# 环境配置（敏感信息）
+.env
+.env.*
+!.env.example
+*.key
+private.*.key
+
+# IDE 和编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+.cache/
+.tmp/
+tmp/
+temp/
+
+# 日志
+*.log
+npm-debug.log*

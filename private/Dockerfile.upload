@@ -1,0 +1,80 @@
+# ==================== Dockerfile.upload (内网版本) ====================
+# 微信小程序 CI - 上传阶段镜像
+# 目标：下载制品，执行上传到微信平台
+# 特点：预装所有依赖，容器启动即可运行，无需 npm install
+#
+# 使用说明：
+#   docker build -f private/Dockerfile.upload -t miniprogram-uploader:latest .
+#
+#   docker run --rm \
+#     -e ARTIFACT_URL="https://artifactory.iflytek.com/build-artifact.tar.gz" \
+#     -e MP_PRIVATE_KEY_URL="https://cdn.iflytek.com/private.key" \
+#     -e ACTION="upload" \
+#     miniprogram-uploader:latest
+
+# 使用科大讯飞内网镜像源
+FROM artifacts.iflytek.com/cbg-docker-private/xfyun_webdev/node:20-alpine AS base
+
+LABEL maintainer="yedai@iflytek.com"
+LABEL description="微信小程序 CI 上传镜像（内网版）- 依赖已内置"
+
+WORKDIR /app
+
+# ===== 安装运行时工具 =====
+# alpine 使用 apk 安装
+RUN apk add --no-cache \
+    curl \
+    ca-certificates \
+    libc6-compat \
+    bash
+
+# ===== 关键优化：预装上传相关依赖到镜像 =====
+# 这些依赖版本相对稳定，内置到镜像可以：
+# 1. 消除运行时 npm install（节省 60+ 秒）
+# 2. 支持离线运行（只需下载制品和私钥）
+# 3. 保证依赖版本一致性
+
+# 如有内网 npm 镜像，可以配置
+# RUN npm config set registry http://npm.iflytek.com/
+
+RUN npm install -g \
+    miniprogram-ci@2.1.26 \
+    axios@1.6.0 \
+    form-data@4.0.0 \
+    minimist@1.2.8 \
+    chalk@4.1.2 \
+    dotenv@16.3.1
+
+# 设置 NODE_PATH 使全局安装的包可被 require
+ENV NODE_PATH=/usr/local/lib/node_modules
+
+# ===== 复制上传脚本和配置 =====
+# 这些文件是固定的，打包进镜像
+COPY scripts ./scripts
+COPY config ./config
+
+# ===== 环境变量声明 =====
+ENV MP_PRIVATE_KEY_URL="" \
+    ACTION="upload" \
+    BUILD_MODE="production" \
+    ROBOT="" \
+    QRCODE_PATH="/app/output/preview-qrcode.png" \
+    UPLOAD_OSS="true" \
+    API_COOKIE="" \
+    ARTIFACT_URL="" \
+    ARTIFACT_USER="" \
+    ARTIFACT_PASSWORD=""
+
+# ===== 创建必要目录 =====
+RUN mkdir -p /app/logs /app/output /app/artifact
+
+# ===== 复制入口脚本 =====
+COPY scripts/docker-upload-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-upload-entrypoint.sh
+
+# ===== 健康检查（可选）=====
+# HEALTHCHECK --interval=30s --timeout=10s \
+#   CMD [ -f "/app/artifact/dist/app.json" ] || exit 1
+
+ENTRYPOINT ["docker-upload-entrypoint.sh"]
+CMD ["upload"]

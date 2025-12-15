@@ -1,0 +1,74 @@
+# ==================== Docker Compose 本地测试配置 ====================
+# 使用说明：
+#   1. 复制 config/.env.example 到本目录为 .env
+#   2. 填写实际的环境变量值
+#   3. 运行：docker-compose up miniprogram-upload
+#
+# 注意：此配置仅用于本地测试，生产环境请使用 CI/CD 流水线
+
+version: '3.8'
+
+services:
+  # ==================== 构建服务 ====================
+  miniprogram-build:
+    build:
+      context: ..
+      dockerfile: public/Dockerfile.build
+      args:
+        BUILD_VERSION: "${BUILD_VERSION:-1.0.0}"
+        BUILD_DESCRIPTION: "${BUILD_DESCRIPTION:-本地测试构建}"
+        GIT_BRANCH: "${GIT_BRANCH:-local}"
+        GIT_COMMIT: "${GIT_COMMIT:-local}"
+        BUILD_MODE: "${BUILD_MODE:-production}"
+    volumes:
+      - ../output:/output
+    profiles:
+      - build
+
+  # ==================== 上传服务 ====================
+  miniprogram-upload:
+    build:
+      context: ..
+      dockerfile: public/Dockerfile.upload
+    environment:
+      - ARTIFACT_URL=${ARTIFACT_URL}
+      - ARTIFACT_USER=${ARTIFACT_USER}
+      - ARTIFACT_PASSWORD=${ARTIFACT_PASSWORD}
+      - MP_PRIVATE_KEY_URL=${MP_PRIVATE_KEY_URL}
+      - ACTION=${ACTION:-upload}
+      - BUILD_MODE=${BUILD_MODE:-production}
+      - ROBOT=${ROBOT:-1}
+      - UPLOAD_OSS=${UPLOAD_OSS:-true}
+      - API_COOKIE=${API_COOKIE}
+      - QRCODE_PATH=${QRCODE_PATH:-/app/output/preview-qrcode.png}
+    volumes:
+      - ../logs:/app/logs
+      - ../output:/app/output
+    profiles:
+      - upload
+
+  # ==================== 预览服务（生成二维码）====================
+  miniprogram-preview:
+    build:
+      context: ..
+      dockerfile: public/Dockerfile.upload
+    environment:
+      - ARTIFACT_URL=${ARTIFACT_URL}
+      - ARTIFACT_USER=${ARTIFACT_USER}
+      - ARTIFACT_PASSWORD=${ARTIFACT_PASSWORD}
+      - MP_PRIVATE_KEY_URL=${MP_PRIVATE_KEY_URL}
+      - ACTION=preview
+      - BUILD_MODE=${BUILD_MODE:-production}
+      - UPLOAD_OSS=${UPLOAD_OSS:-true}
+      - API_COOKIE=${API_COOKIE}
+      - QRCODE_PATH=/app/output/preview-qrcode.png
+    volumes:
+      - ../logs:/app/logs
+      - ../output:/app/output
+    profiles:
+      - preview
+
+# ==================== 网络配置 ====================
+networks:
+  default:
+    name: miniprogram-ci-network
