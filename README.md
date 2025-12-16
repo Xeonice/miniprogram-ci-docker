@@ -313,18 +313,6 @@ pipeline {
 }
 ```
 
-## 公网版 vs 内网版
-
-| 配置项 | 公网版 (public/) | 内网版 (private/) |
-|--------|-----------------|------------------|
-| Node 基础镜像 | `node:22-alpine` | `artifacts.iflytek.com/.../node:22-alpine` |
-| CI 基础镜像 | `your-registry/miniprogram-ci-base` | `artifacts.iflytek.com/.../miniprogram-ci-base` |
-| npm registry | 默认 (npmjs.org) | 默认 (npmjs.org) |
-| 脚本/配置 | 完全相同 | 完全相同 |
-| 功能 | 完全相同 | 完全相同 |
-
-使用公网版时，需要将 `public/Dockerfile.build` 中的 `your-registry` 替换为实际的镜像仓库地址。
-
 ## 注意事项
 
 1. **私钥安全**：私钥文件通过 `MP_PRIVATE_KEY_URL` 运行时下载，运行结束后自动清理，不会保留在镜像或容器中
@@ -338,6 +326,12 @@ pipeline {
 5. **日志持久化**：可通过 `-v $(pwd)/logs:/app/logs` 挂载日志目录
 
 6. **二维码输出**：预览模式生成的二维码保存在 `/app/output/` 目录，可通过挂载获取
+
+7. **构建指令要求**：项目的 `package.json` 中需要包含以下构建脚本：
+   - `npm run build` - 生产环境构建（`BUILD_MODE=production` 时执行）
+   - `npm run build:pre` - 测试/预发布环境构建（`BUILD_MODE=pre` 或 `BUILD_MODE=test` 时执行）
+
+   构建产物需要输出到 `./dist` 目录
 
 ## 故障排查
 
