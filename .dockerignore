@@ -12,8 +12,8 @@ output/
 *.tar.gz
 *.zip
 
-# 版本控制
-.git/
+# 版本控制（保留 .git 用于生成构建信息）
+# .git/  # 注释掉，需要复制 .git 来读取 commit 信息
 .gitignore
 .gitattributes
 

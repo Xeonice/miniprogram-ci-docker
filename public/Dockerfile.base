@@ -1,0 +1,65 @@
+# ==================== 微信小程序 CI 基础镜像（公网版）====================
+# 包含所有依赖和脚本，用户的项目镜像 FROM 这个即可
+#
+# 构建命令：
+#   docker build -f public/Dockerfile.base \
+#     -t your-registry/miniprogram-ci-base:1.0.2 \
+#     .
+#
+# 上传命令：
+#   docker push your-registry/miniprogram-ci-base:1.0.2
+
+FROM node:22-alpine
+
+LABEL maintainer="your-email@example.com"
+LABEL description="微信小程序 CI 基础镜像 - 包含所有依赖和脚本（公网版）"
+LABEL version="1.0.2"
+
+# ===== 安装系统工具 =====
+RUN apk add --no-cache \
+    git \
+    curl \
+    ca-certificates \
+    libc6-compat \
+    gcompat \
+    bash
+
+# ===== 预装上传相关依赖（全局安装）=====
+RUN npm install -g \
+    miniprogram-ci@2.1.26 \
+    axios@1.6.0 \
+    form-data@4.0.0 \
+    minimist@1.2.8 \
+    chalk@4.1.2 \
+    dotenv@16.3.1
+
+# ===== 设置全局 node_modules 路径 =====
+ENV NODE_PATH=/usr/local/lib/node_modules
+
+# ===== 创建目录结构 =====
+WORKDIR /ci
+RUN mkdir -p /ci/scripts/utils /ci/config /app/logs /app/output /app/dist
+
+# ===== 复制 CI 脚本 =====
+COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY scripts/upload-mp.js /ci/scripts/
+COPY scripts/generate-build-info.js /ci/scripts/
+COPY scripts/generate-key.js /ci/scripts/
+COPY scripts/utils/ /ci/scripts/utils/
+
+# ===== 复制配置文件 =====
+COPY config/ci.config.js /ci/config/
+
+# ===== 设置权限 =====
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# ===== 环境变量 =====
+ENV CI_SCRIPTS_PATH="/ci/scripts" \
+    CI_CONFIG_PATH="/ci/config"
+
+# ===== 工作目录 =====
+WORKDIR /app
+
+# ===== 入口点 =====
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["upload"]
