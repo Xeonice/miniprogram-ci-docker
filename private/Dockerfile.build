@@ -41,12 +41,18 @@ RUN node ${CI_SCRIPTS_PATH}/generate-build-info.js \
     && rm -rf /app/.git
 
 # ===== 环境变量（构建参数 -> 环境变量，运行时可覆盖）=====
+# 机器人名称配置（ROBOT_N_NAME）用于多迭代并行上传
 ENV MP_PRIVATE_KEY_URL="" \
     ACTION="upload" \
     BUILD_VERSION="${BUILD_VERSION}" \
     BUILD_DESC="${BUILD_DESC}" \
     BUILD_MODE="production" \
     BUILD_ENV="development" \
-    ROBOT="" \
+    ROBOT="1" \
     BUILDER="${BUILDER}" \
-    UPLOAD_OSS="true"
+    UPLOAD_OSS="true" \
+    ROBOT_1_NAME="" \
+    ROBOT_2_NAME="" \
+    ROBOT_3_NAME="" \
+    ROBOT_4_NAME="" \
+    ROBOT_5_NAME=""

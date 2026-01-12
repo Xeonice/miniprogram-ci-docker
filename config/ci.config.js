@@ -52,9 +52,21 @@ module.exports = {
     ],
   },
 
+  // ==================== 机器人配置 ====================
+  // 微信小程序 CI 支持 1-30 号机器人
+  // 提供 5 个预设机器人，用于多迭代并行上传测试
+  // 用户可通过环境变量 ROBOT_N_NAME 自定义机器人名称
+  robots: {
+    1: { name: process.env.ROBOT_1_NAME || "CI机器人1" },
+    2: { name: process.env.ROBOT_2_NAME || "CI机器人2" },
+    3: { name: process.env.ROBOT_3_NAME || "CI机器人3" },
+    4: { name: process.env.ROBOT_4_NAME || "CI机器人4" },
+    5: { name: process.env.ROBOT_5_NAME || "CI机器人5" },
+  },
+
   // 体验版配置
   development: {
-    robot: 1, // 使用 1 号 CI 机器人
+    robot: 1, // 默认使用 1 号机器人，可通过 ROBOT 环境变量覆盖
     setting: {
       es6: true,
       minifyJS: true,
@@ -72,7 +84,7 @@ module.exports = {
 
   // 预发布配置
   staging: {
-    robot: 2, // 使用 2 号 CI 机器人
+    robot: 1, // 默认使用 1 号机器人，可通过 ROBOT 环境变量覆盖
     setting: {
       es6: true,
       minifyJS: true,
@@ -90,7 +102,7 @@ module.exports = {
 
   // 正式版配置
   production: {
-    robot: 3, // 使用 3 号 CI 机器人
+    robot: 1, // 默认使用 1 号机器人，可通过 ROBOT 环境变量覆盖
     setting: {
       es6: true,
       minifyJS: true,
@@ -216,6 +228,7 @@ module.exports.getConfig = function (env = 'development') {
     ...module.exports.common,
     ...envConfig,
     env,
+    robots: module.exports.robots,
     oss: module.exports.oss,
     notification: module.exports.notification,
     version: module.exports.version,
@@ -237,4 +250,37 @@ module.exports.validate = function (config) {
   }
 
   return true;
+};
+
+/**
+ * 获取机器人信息
+ * @param {number} robotId - 机器人编号 (1-30)
+ * @returns {Object} 机器人信息 { id, name }
+ */
+module.exports.getRobotInfo = function (robotId) {
+  const id = parseInt(robotId);
+  if (isNaN(id) || id < 1 || id > 30) {
+    throw new Error(`无效的机器人编号: ${robotId}，有效范围为 1-30`);
+  }
+
+  const robots = module.exports.robots;
+  if (robots[id]) {
+    return { id, name: robots[id].name };
+  }
+
+  // 对于未预设的机器人（6-30），支持通过环境变量自定义名称
+  const envName = process.env[`ROBOT_${id}_NAME`];
+  return { id, name: envName || `CI机器人${id}` };
+};
+
+/**
+ * 列出所有预设机器人
+ * @returns {Array} 机器人列表
+ */
+module.exports.listRobots = function () {
+  const robots = module.exports.robots;
+  return Object.entries(robots).map(([id, info]) => ({
+    id: parseInt(id),
+    name: info.name,
+  }));
 };
