@@ -223,10 +223,15 @@ module.exports.getConfig = function (env = 'development') {
     throw new Error(`未找到环境配置: ${env}`);
   }
 
+  // 从环境变量获取机器人编号，如果未设置则使用环境配置中的默认值
+  const robotFromEnv = process.env.ROBOT ? parseInt(process.env.ROBOT) : null;
+  const robot = robotFromEnv || envConfig.robot;
+
   // 合并通用配置和环境配置
   return {
     ...module.exports.common,
     ...envConfig,
+    robot, // 使用环境变量覆盖后的 robot 值
     env,
     robots: module.exports.robots,
     oss: module.exports.oss,

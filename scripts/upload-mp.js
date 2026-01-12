@@ -35,6 +35,11 @@ class MiniProgramUploader {
     // 获取配置
     this.config = ciConfig.getConfig(this.env);
 
+    // 如果命令行指定了机器人编号，覆盖配置（命令行优先级最高）
+    if (options.robot) {
+      this.config.robot = parseInt(options.robot);
+    }
+
     // 初始化工具
     this.keyManager = new KeyManager(this.config.appid);
     this.versionManager = new VersionManager();
@@ -557,12 +562,6 @@ if (require.main === module) {
     const versionManager = new VersionManager();
     console.log(versionManager.generateReport());
     process.exit(0);
-  }
-
-  // 如果指定了机器人编号，覆盖配置
-  if (argv.robot) {
-    const config = ciConfig.getConfig(argv.env || 'development');
-    config.robot = parseInt(argv.robot);
   }
 
   const uploader = new MiniProgramUploader(argv);
