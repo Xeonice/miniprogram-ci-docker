@@ -97,31 +97,25 @@ node scripts/upload-mp.js --help
 | `BUILD_MODE` | 否 | `production`/`pre`/`test`，决定构建命令 |
 | `BUILD_ENV` | 否 | `development`/`staging`/`production` |
 | `ROBOT` | 否 | 机器人编号 1-30，默认 `1` |
-| `ROBOT_N_NAME` | 否 | 自定义机器人名称，如 `ROBOT_1_NAME="迭代A"` |
 | `SKIP_INSTALL` | 否 | 跳过 npm install |
 | `SKIP_BUILD` | 否 | 跳过 Taro 构建 |
 
 ## 机器人配置
 
-预设 5 个机器人用于多迭代并行上传测试，通过 `ROBOT` 环境变量指定编号（1-30），通过 `ROBOT_N_NAME` 自定义名称：
+微信小程序 CI 支持 1-30 号机器人，通过 `ROBOT` 环境变量指定编号：
 
 ```bash
-# 使用机器人 2，自定义名称为"迭代B"
+# 使用机器人 2
 docker run --rm \
   -e MP_PRIVATE_KEY_URL="..." \
   -e ROBOT=2 \
-  -e ROBOT_2_NAME="迭代B" \
   miniprogram:v1.0.0
 
-# 并行上传多个迭代
-docker run -d -e ROBOT=1 -e ROBOT_1_NAME="迭代A" ...
-docker run -d -e ROBOT=2 -e ROBOT_2_NAME="迭代B" ...
-docker run -d -e ROBOT=3 -e ROBOT_3_NAME="迭代C" ...
+# 并行上传多个迭代（使用不同机器人避免冲突）
+docker run -d -e ROBOT=1 ...
+docker run -d -e ROBOT=2 ...
+docker run -d -e ROBOT=3 ...
 ```
-
-`config/ci.config.js` 提供辅助函数：
-- `getRobotInfo(id)` - 获取机器人信息 `{ id, name }`
-- `listRobots()` - 列出所有预设机器人
 
 ## 配置系统
 

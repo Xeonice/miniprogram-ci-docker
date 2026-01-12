@@ -123,13 +123,13 @@ class MiniProgramUploader {
     const desc = this.versionManager.generateDescription(this.env, this.desc);
     const qrcodeOutput = this.qrcodeOutput || this.config.qrcodeOptions.outputDest;
 
-    // 获取机器人信息
-    const robotInfo = ciConfig.getRobotInfo(this.config.robot);
+    // 验证机器人编号
+    const robot = ciConfig.validateRobot(this.config.robot);
 
     this.logger.info(`开始执行上传和预览...`);
     this.logger.info(`版本号: ${version}`);
     this.logger.info(`描述: ${desc}`);
-    this.logger.info(`使用机器人: ${robotInfo.id} (${robotInfo.name})`);
+    this.logger.info(`使用机器人: ${robot}`);
     this.logger.divider();
 
     try {
@@ -271,12 +271,12 @@ class MiniProgramUploader {
     const desc = this.versionManager.generateDescription(this.env, this.desc);
     const qrcodeOutput = this.qrcodeOutput || this.config.qrcodeOptions.outputDest;
 
-    // 获取机器人信息
-    const robotInfo = ciConfig.getRobotInfo(this.config.robot);
+    // 验证机器人编号
+    const robot = ciConfig.validateRobot(this.config.robot);
 
     this.logger.info(`开始生成预览...`);
     this.logger.info(`描述: ${desc}`);
-    this.logger.info(`使用机器人: ${robotInfo.id} (${robotInfo.name})`);
+    this.logger.info(`使用机器人: ${robot}`);
 
     try {
       const previewResult = await ci.preview({

@@ -184,42 +184,11 @@ docker run --rm \
 | `BUILD_DESC` | 否 | 构建时值 | 版本描述（覆盖构建时值） |
 | `BUILDER` | 否 | 构建时值 | 构建人名称（覆盖构建时值） |
 | `ROBOT` | 否 | `1` | CI 机器人编号（1-30） |
-| `ROBOT_N_NAME` | 否 | `CI机器人N` | 自定义机器人名称，如 `ROBOT_1_NAME="迭代A"` |
 | `UPLOAD_OSS` | 否 | `true` | 是否上传二维码到 OSS |
 | `API_COOKIE` | 否 | - | OSS 上传所需的 Cookie |
 | `QRCODE_PATH` | 否 | `/app/output/preview-qrcode.png` | 二维码保存路径 |
 | `SKIP_INSTALL` | 否 | `false` | 跳过 npm install |
 | `SKIP_BUILD` | 否 | `false` | 跳过 Taro 构建 |
-
-### 机器人配置
-
-微信小程序 CI 支持 1-30 号机器人，本项目预设 5 个机器人用于多迭代并行上传测试：
-
-| 机器人编号 | 默认名称 | 自定义环境变量 |
-|-----------|---------|---------------|
-| 1 | CI机器人1 | `ROBOT_1_NAME` |
-| 2 | CI机器人2 | `ROBOT_2_NAME` |
-| 3 | CI机器人3 | `ROBOT_3_NAME` |
-| 4 | CI机器人4 | `ROBOT_4_NAME` |
-| 5 | CI机器人5 | `ROBOT_5_NAME` |
-
-**使用示例：**
-
-```bash
-# 使用机器人 2，自定义名称
-docker run --rm \
-  -e MP_PRIVATE_KEY_URL="https://cdn.example.com/private.key" \
-  -e ROBOT=2 \
-  -e ROBOT_2_NAME="迭代B" \
-  miniprogram:v1.0.0
-
-# 多迭代并行上传（使用不同机器人避免冲突）
-docker run -d -e MP_PRIVATE_KEY_URL="..." -e ROBOT=1 -e ROBOT_1_NAME="迭代A" miniprogram:v1.0.0
-docker run -d -e MP_PRIVATE_KEY_URL="..." -e ROBOT=2 -e ROBOT_2_NAME="迭代B" miniprogram:v1.0.0
-docker run -d -e MP_PRIVATE_KEY_URL="..." -e ROBOT=3 -e ROBOT_3_NAME="迭代C" miniprogram:v1.0.0
-```
-
-> **注意**：机器人编号 6-30 也可使用，通过 `ROBOT_N_NAME` 环境变量自定义名称。
 
 ### 上传描述格式
 
@@ -269,7 +238,6 @@ deploy-dev:
         -e MP_PRIVATE_KEY_URL="${MP_PRIVATE_KEY_URL}"
         -e BUILD_MODE="pre"
         -e ROBOT=1
-        -e ROBOT_1_NAME="${CI_COMMIT_REF_NAME}"
         -e ACTION="upload"
         ${DOCKER_REGISTRY}/${IMAGE_NAME}:${CI_COMMIT_SHORT_SHA}
   environment:
@@ -297,13 +265,11 @@ deploy-parallel:
   parallel:
     matrix:
       - ROBOT: [1, 2, 3]
-        ROBOT_NAME: ["迭代A", "迭代B", "迭代C"]
   script:
     - docker run --rm
         -e MP_PRIVATE_KEY_URL="${MP_PRIVATE_KEY_URL}"
         -e BUILD_MODE="pre"
         -e ROBOT="${ROBOT}"
-        -e ROBOT_${ROBOT}_NAME="${ROBOT_NAME}"
         ${DOCKER_REGISTRY}/${IMAGE_NAME}:${CI_COMMIT_SHORT_SHA}
   when: manual
 ```
