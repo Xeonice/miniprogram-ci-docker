@@ -8,6 +8,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { randomBytes } = require('crypto');
 
 class VersionManager {
   constructor() {
@@ -154,6 +155,25 @@ class VersionManager {
     }
 
     return null;
+  }
+
+  /**
+   * 生成全局唯一的版本号字符串，用于上传给微信侧
+   * 格式：{baseVersion}-{buildMode}-{8hex}-{8hex}
+   *
+   * 目的：规避 miniprogram-ci 在「同 baseVersion 重复上传」时
+   *      Promise.all([upload, preview]) 并发跑 innerUpload 命中的 race condition
+   *      （表现为 AppGraph.this.conf.app 未初始化 → 'functionalPages' undefined）
+   *
+   * @param {string} baseVersion - 用户/CI 传入的基础版本号（如 "3.8.0"）
+   * @param {string} buildMode   - 来自 process.env.BUILD_MODE，约定值 production/pre/test
+   * @returns {string} 形如 "3.8.0-production-a1b2c3d4-e5f67890"
+   */
+  generateUniqueVersion(baseVersion, buildMode) {
+    const hex = randomBytes(8).toString('hex');           // 16 hex chars
+    const uuid = `${hex.slice(0, 8)}-${hex.slice(8, 16)}`;
+    const mode = buildMode || 'production';
+    return `${baseVersion}-${mode}-${uuid}`;
   }
 
   /**

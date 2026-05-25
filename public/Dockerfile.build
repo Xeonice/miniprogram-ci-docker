@@ -16,7 +16,7 @@
 #     -e BUILD_MODE="production" \
 #     miniprogram:v1.0.0
 
-FROM your-registry/miniprogram-ci-base:1.0.2
+FROM your-registry/miniprogram-ci-base:1.1.0
 
 # ===== 构建参数 =====
 ARG PROJECT_DIR=.

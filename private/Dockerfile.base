@@ -13,7 +13,7 @@ FROM artifacts.iflytek.com/cbg-docker-private/xfyun_webdev/node:22-alpine
 
 LABEL maintainer="yedai@iflytek.com"
 LABEL description="微信小程序 CI 基础镜像 - 包含所有依赖和脚本"
-LABEL version="1.0.2"
+LABEL version="1.1.0"
 
 # ===== 安装系统工具 =====
 RUN apk add --no-cache \

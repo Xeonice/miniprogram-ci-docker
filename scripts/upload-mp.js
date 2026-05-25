@@ -119,7 +119,9 @@ class MiniProgramUploader {
    * 执行上传和预览（同时进行）
    */
   async uploadWithPreview() {
-    const version = this.versionManager.getRecommendedVersion(this.version);
+    const baseVersion = this.versionManager.getRecommendedVersion(this.version);
+    const buildMode = process.env.BUILD_MODE || 'production';
+    const version = this.versionManager.generateUniqueVersion(baseVersion, buildMode);
     const desc = this.versionManager.generateDescription(this.env, this.desc);
     const qrcodeOutput = this.qrcodeOutput || this.config.qrcodeOptions.outputDest;
 
@@ -127,7 +129,8 @@ class MiniProgramUploader {
     const robot = ciConfig.validateRobot(this.config.robot);
 
     this.logger.info(`开始执行上传和预览...`);
-    this.logger.info(`版本号: ${version}`);
+    this.logger.info(`用户版本: ${baseVersion}`);
+    this.logger.info(`实际上传: ${version}`);
     this.logger.info(`描述: ${desc}`);
     this.logger.info(`使用机器人: ${robot}`);
     this.logger.divider();
@@ -251,7 +254,9 @@ class MiniProgramUploader {
         localQrcodePath: qrcodeOutput
       };
     } catch (error) {
-      this.logger.error(`上传或预览失败: ${error.message}`);
+      this.logger.error('上传或预览失败:');
+      this._logDiagnosticError(error, version);
+      await this._probeEgressIp();
       throw error;
     }
   }
@@ -354,9 +359,60 @@ class MiniProgramUploader {
         qrcodeUrl
       };
     } catch (error) {
-      this.logger.error(`预览生成失败: ${error.message}`);
+      this.logger.error('预览生成失败:');
+      this._logDiagnosticError(error, '0.0.1 (preview hardcoded)');
+      await this._probeEgressIp();
       throw error;
     }
+  }
+
+  /**
+   * 输出错误对象的完整诊断信息（兼容标准 Error / CodeError / {errCode,errMsg} 等）
+   * 所有输出走 this.logger，与项目其他日志的格式 / 时间戳 / 落盘行为保持一致
+   *
+   * @param {*} error    任意被 catch 到的对象
+   * @param {string} version 出错时实际使用的版本号字符串（便于和微信后台对照）
+   */
+  _logDiagnosticError(error, version) {
+    this.logger.error(`  version    = ${version}`);
+    this.logger.error(`  message    = ${(error && error.message) || '(无 message)'}`);
+    this.logger.error(`  code       = ${error && error.code}`);
+    this.logger.error(`  type       = ${typeof error}, ctor = ${error && error.constructor && error.constructor.name}`);
+    if (error && error.errCode) {
+      this.logger.error(`  errCode    = ${error.errCode}, errMsg = ${error.errMsg}`);
+    }
+    try {
+      const ownProps = error ? Object.getOwnPropertyNames(error) : [];
+      this.logger.error(`  ownProps   = ${ownProps.join(', ')}`);
+      this.logger.error(`  JSON       = ${JSON.stringify(error, ownProps, 2)}`);
+    } catch (e) {
+      this.logger.error(`  序列化失败: ${e && e.message}`);
+    }
+    if (error && error.stack) {
+      this.logger.error(`Error stack:\n${error.stack}`);
+    }
+  }
+
+  /**
+   * 探测公网出口 IP，依次尝试 ifconfig.me / ipinfo.io/ip / icanhazip.com
+   * 每个服务 5s 超时；任一成功即采纳；全部失败也不抛异常
+   * 用途：错误日志里直接看到出口 IP，对照微信公众平台 IP 白名单
+   */
+  async _probeEgressIp() {
+    const { execSync } = require('child_process');
+    const services = ['ifconfig.me', 'ipinfo.io/ip', 'icanhazip.com'];
+    for (const svc of services) {
+      try {
+        const ip = execSync(`curl -sS --max-time 5 https://${svc}`, { encoding: 'utf8' }).trim();
+        if (ip) {
+          this.logger.error(`  公网出口IP = ${ip} (via ${svc})`);
+          return;
+        }
+      } catch (_) {
+        // 试下一个服务
+      }
+    }
+    this.logger.error('  公网出口IP = (无法获取，3 个公共探测服务均失败)');
   }
 
   /**
