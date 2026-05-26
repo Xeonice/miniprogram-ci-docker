@@ -353,7 +353,15 @@ if [ $UPLOAD_RESULT -eq 0 ]; then
     print_info "构建模式: ${BUILD_MODE}"
     print_info "部署环境: ${BUILD_ENV}"
     print_info "构建耗时: ${BUILD_DURATION} 秒"
-    print_info "版本: ${BUILD_VERSION}"
+    # 实际上传的版本号（含 BUILD_MODE + UUID 后缀），由 upload-mp.js 写入
+    # 文件不存在（如 preview 模式 / upload 失败）时回退到 BUILD_VERSION
+    if [ -f "./uploaded-version.txt" ]; then
+        ACTUAL_VERSION=$(cat ./uploaded-version.txt)
+        print_info "用户版本: ${BUILD_VERSION}"
+        print_info "实际上传: ${ACTUAL_VERSION}"
+    else
+        print_info "版本: ${BUILD_VERSION}"
+    fi
     print_info "描述: ${FULL_DESC}"
     print_info "操作: ${ACTION}"
     if [ -n "$ROBOT" ]; then

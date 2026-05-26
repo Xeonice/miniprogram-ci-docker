@@ -154,6 +154,17 @@ class MiniProgramUploader {
             }
           });
           this.logger.success('【上传】上传成功！');
+
+          // 输出实际上传的版本号到文件（含 BUILD_MODE + UUID 后缀）
+          // 方便 docker-entrypoint.sh 摘要 / CI 流水线读取真实版本号
+          try {
+            const uploadedVersionFile = './uploaded-version.txt';
+            fs.writeFileSync(uploadedVersionFile, version);
+            this.logger.info(`实际上传版本已保存到: ${uploadedVersionFile}`);
+          } catch (e) {
+            this.logger.warn(`保存实际上传版本号失败: ${e && e.message}`);
+          }
+
           return result;
         })(),
 
