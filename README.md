@@ -133,6 +133,7 @@ docker build -f private/Dockerfile.build \
   --build-arg BUILD_VERSION="1.0.0" \
   --build-arg BUILD_DESC="新功能发布" \
   --build-arg BUILDER="张三" \
+  --build-arg BUILD_MODE="production" \
   -t miniprogram:v1.0.0 \
   .
 ```
@@ -226,6 +227,7 @@ build:
         --build-arg BUILD_VERSION="${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}"
         --build-arg BUILD_DESC="${CI_COMMIT_MESSAGE}"
         --build-arg BUILDER="${GITLAB_USER_NAME}"
+        --build-arg BUILD_MODE="pre"
         -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:${CI_COMMIT_SHORT_SHA}
         .
     - docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${CI_COMMIT_SHORT_SHA}
@@ -296,6 +298,7 @@ pipeline {
                             --build-arg BUILD_VERSION="${version}" \
                             --build-arg BUILD_DESC="${env.GIT_COMMIT_MESSAGE}" \
                             --build-arg BUILDER="${env.BUILD_USER}" \
+                            --build-arg BUILD_MODE="production" \
                             -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:${version} \
                             .
                     """

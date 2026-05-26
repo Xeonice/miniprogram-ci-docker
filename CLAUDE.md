@@ -57,6 +57,7 @@ docker build -f public/Dockerfile.build \
   --build-arg BUILD_VERSION="1.0.0" \
   --build-arg BUILD_DESC="版本描述" \
   --build-arg BUILDER="构建人" \
+  --build-arg BUILD_MODE="production" \
   -t miniprogram:v1.0.0 .
 ```
 
