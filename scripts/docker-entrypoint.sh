@@ -2,7 +2,7 @@
 # ==================== 微信小程序 CI 入口脚本 ====================
 # 功能：
 #   1. 安装项目依赖（如果需要）
-#   2. 根据 BUILD_MODE 执行 Taro 构建
+#   2. 验证构建产物（dist/ 由 Dockerfile.build 阶段生成）
 #   3. 下载私钥
 #   4. 执行上传/预览操作
 #
@@ -21,7 +21,6 @@
 #   UPLOAD_OSS          - 是否上传到 OSS：true / false（默认 true）
 #   API_COOKIE          - API Cookie（OSS 上传需要）
 #   SKIP_INSTALL        - 跳过 npm install（默认 false）
-#   SKIP_BUILD          - 跳过构建步骤（默认 false）
 
 set -e
 
@@ -77,7 +76,6 @@ echo "BUILDER: ${BUILDER:-未指定}"
 echo "UPLOAD_OSS: ${UPLOAD_OSS:-true}"
 echo "API_COOKIE: ${API_COOKIE:+已设置}"
 echo "SKIP_INSTALL: ${SKIP_INSTALL:-false}"
-echo "SKIP_BUILD: ${SKIP_BUILD:-false}"
 echo "CI_SCRIPTS_PATH: ${CI_SCRIPTS_PATH}"
 echo "=================================="
 echo ""
@@ -101,7 +99,6 @@ fi
 BUILD_ENV="${BUILD_ENV:-development}"
 UPLOAD_OSS="${UPLOAD_OSS:-true}"
 SKIP_INSTALL="${SKIP_INSTALL:-false}"
-SKIP_BUILD="${SKIP_BUILD:-false}"
 
 # ==================== 2. 验证项目目录 ====================
 print_info "验证项目目录..."
@@ -192,47 +189,21 @@ print_info "最终使用版本号: ${BUILD_VERSION}"
 print_info "最终使用描述: ${BUILD_DESC}"
 echo ""
 
-# ==================== 5. 执行 Taro 构建 ====================
-if [ "$SKIP_BUILD" != "true" ]; then
-    print_info "执行 Taro 构建..."
-    print_info "构建模式: ${BUILD_MODE}"
-
-    BUILD_START_TIME=$(date +%s)
-
-    # 根据 BUILD_MODE 执行不同的构建命令
-    if [ "$BUILD_MODE" = "pre" ]; then
-        print_info "执行预发布/测试构建: npm run build:pre"
-        npm run build:pre
-    else
-        print_info "执行生产构建: npm run build"
-        npm run build
-    fi
-
-    BUILD_END_TIME=$(date +%s)
-    BUILD_DURATION=$((BUILD_END_TIME - BUILD_START_TIME))
-
-    print_success "Taro 构建完成，耗时: ${BUILD_DURATION} 秒"
-else
-    print_info "SKIP_BUILD=true，跳过构建步骤"
-    BUILD_DURATION=0
-fi
-echo ""
-
-# ==================== 6. 验证构建产物 ====================
+# ==================== 5. 验证构建产物 ====================
+# Taro 构建已在镜像 build 阶段完成（见 Dockerfile.build），运行时只验证 dist 存在
+# 如 dist 缺失说明镜像异常 — fail-fast 立刻报错，不在运行时再 build
 print_info "验证构建产物..."
+print_info "构建模式: ${BUILD_MODE}"
 
-if [ ! -d "$WORK_DIR/dist" ]; then
-    print_error "构建失败：缺少 dist 目录"
+if [ ! -d "$WORK_DIR/dist" ] || [ -z "$(ls -A $WORK_DIR/dist 2>/dev/null)" ]; then
+    print_error "构建产物 dist/ 不存在或为空。本镜像必须在 build 阶段完成 Taro 构建（base ≥ 1.2.0）。请确认 Dockerfile.build 包含 'RUN npm run build:pre/build' 步骤。"
 fi
 
-if [ -z "$(ls -A $WORK_DIR/dist)" ]; then
-    print_error "构建失败：dist 目录为空"
-fi
-
-# 复制构建信息到 dist
+# 兜底：build-info.json 同步到 dist（Dockerfile.build 阶段已做，这里幂等）
 cp build-info.json dist/ 2>/dev/null || true
 
-print_success "构建产物验证通过"
+BUILD_DURATION=0
+print_success "构建产物验证通过（已在 build 阶段产出）"
 echo ""
 
 # ==================== 7. 下载私钥 ====================
