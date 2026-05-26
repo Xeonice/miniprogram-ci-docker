@@ -62,37 +62,37 @@
 
 ## 7. 提交（待用户确认分支与策略）
 
-- [ ] 7.1 **主动 ask 用户**：分支用 `feat/unique-version-and-diag-logs` 还是直接 main / 别的命名
-- [ ] 7.2 git add scripts/ public/ private/ README.md CLAUDE.md openspec/
-- [ ] 7.3 git commit，message 形如：
+- [x] 7.1 **主动 ask 用户**：分支用 `feat/unique-version-and-diag-logs` 还是直接 main / 别的命名
+- [x] 7.2 git add scripts/ public/ private/ README.md CLAUDE.md openspec/
+- [x] 7.3 git commit，message 形如：
   ```
   feat: 新增唯一版本号 + 内置诊断日志（base 1.1.0）
 
   Co-Authored-By: ...
   ```
-- [ ] 7.4 git push 到远端目标分支
+- [x] 7.4 git push 到远端目标分支
 
 ## 8. Build & Push base 镜像 1.1.0
 
-- [ ] 8.1 `docker build -f public/Dockerfile.base -t your-registry/miniprogram-ci-base:1.1.0 .`
+- [x] 8.1 `docker build -f public/Dockerfile.base -t your-registry/miniprogram-ci-base:1.1.0 .`
 - [ ] 8.2 `docker push your-registry/miniprogram-ci-base:1.1.0`
-- [ ] 8.3 `docker build -f private/Dockerfile.base -t artifacts.iflytek.com/cbg-docker-private/xfyun_webdev/miniprogram-ci-base:1.1.0 .`
-- [ ] 8.4 `docker push artifacts.iflytek.com/cbg-docker-private/xfyun_webdev/miniprogram-ci-base:1.1.0`
-- [ ] 8.5 在镜像仓库平台确认 1.1.0 tag 可拉取
+- [x] 8.3 `docker build -f private/Dockerfile.base -t artifacts.iflytek.com/cbg-docker-private/xfyun_webdev/miniprogram-ci-base:1.1.0 .`
+- [x] 8.4 `docker push artifacts.iflytek.com/cbg-docker-private/xfyun_webdev/miniprogram-ci-base:1.1.0`
+- [x] 8.5 在镜像仓库平台确认 1.1.0 tag 可拉取
 
 ## 9. Phase 2 — frontend-app 升级 FROM + 撤诊断 patch
 
 (跨仓库工作，在 `~/WorkProject/zhiwen/frontend-app` 进行)
 
-- [ ] 9.1 切到 `fix/runtime-and-product-bugs-2026-05-22` 分支（用户已确认）
-- [ ] 9.2 `frontend-app/Dockerfile.build` 第 18 行 FROM 改为 `:1.1.0`
-- [ ] 9.3 删 `frontend-app/Dockerfile.build` 中 `COPY ${PROJECT_DIR}/ci-patch /ci-patch` 与 `RUN node /ci-patch/patch-upload-mp.js` 两行
-- [ ] 9.4 删 `frontend-app/ci-patch/` 整个目录
-- [ ] 9.5 git add + commit（commit msg 短，避免触发 microprogram-ci desc 长度问题）：
+- [x] 9.1 切到 `fix/runtime-and-product-bugs-2026-05-22` 分支（用户已确认）
+- [x] 9.2 `frontend-app/Dockerfile.build` 第 18 行 FROM 改为 `:1.1.0`
+- [x] 9.3 删 `frontend-app/Dockerfile.build` 中 `COPY ${PROJECT_DIR}/ci-patch /ci-patch` 与 `RUN node /ci-patch/patch-upload-mp.js` 两行
+- [x] 9.4 删 `frontend-app/ci-patch/` 整个目录
+- [x] 9.5 git add + commit（commit msg 短，避免触发 microprogram-ci desc 长度问题）：
   ```
   chore(ci): 升级 base 镜像到 1.1.0 并下线诊断 patch
   ```
-- [ ] 9.6 git push 到 `fix/runtime-and-product-bugs-2026-05-22`
+- [x] 9.6 git push 到 `fix/runtime-and-product-bugs-2026-05-22`
 
 ## 10. Phase 3 — 验证
 

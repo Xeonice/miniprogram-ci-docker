@@ -112,16 +112,16 @@ miniprogram-ci-docker/
 ```bash
 # 公网版本
 docker build -f public/Dockerfile.base \
-  -t your-registry/miniprogram-ci-base:1.1.0 \
+  -t your-registry/miniprogram-ci-base:1.1.1 \
   .
 
 # 内网版本
 docker build -f private/Dockerfile.base \
-  -t artifacts.iflytek.com/cbg-docker-private/xfyun_webdev/miniprogram-ci-base:1.1.0 \
+  -t artifacts.iflytek.com/cbg-docker-private/xfyun_webdev/miniprogram-ci-base:1.1.1 \
   .
 
 # 推送基础镜像
-docker push your-registry/miniprogram-ci-base:1.1.0
+docker push your-registry/miniprogram-ci-base:1.1.1
 ```
 
 ### 2. 构建项目镜像
@@ -215,7 +215,7 @@ stages:
 variables:
   DOCKER_REGISTRY: artifacts.iflytek.com/cbg-docker-private/xfyun_webdev
   IMAGE_NAME: miniprogram
-  CI_BASE_IMAGE: ${DOCKER_REGISTRY}/miniprogram-ci-base:1.1.0
+  CI_BASE_IMAGE: ${DOCKER_REGISTRY}/miniprogram-ci-base:1.1.1
 
 # 构建项目镜像
 build:

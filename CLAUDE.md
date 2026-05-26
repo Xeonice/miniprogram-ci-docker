@@ -43,10 +43,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # 公网版
-docker build -f public/Dockerfile.base -t your-registry/miniprogram-ci-base:1.1.0 .
+docker build -f public/Dockerfile.base -t your-registry/miniprogram-ci-base:1.1.1 .
 
 # 内网版
-docker build -f private/Dockerfile.base -t artifacts.iflytek.com/cbg-docker-private/xfyun_webdev/miniprogram-ci-base:1.1.0 .
+docker build -f private/Dockerfile.base -t artifacts.iflytek.com/cbg-docker-private/xfyun_webdev/miniprogram-ci-base:1.1.1 .
 ```
 
 ### 构建项目镜像
