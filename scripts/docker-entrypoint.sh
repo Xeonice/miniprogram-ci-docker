@@ -11,7 +11,9 @@
 #   ACTION              - 操作类型：upload / preview（默认 upload）
 #   BUILD_VERSION       - 版本号（可选，覆盖 build-info.json 中的版本）
 #   BUILD_DESC          - 版本描述（可选，覆盖 build-info.json 中的描述）
-#   BUILD_MODE          - 构建模式：production / pre / test（默认 production）
+#   BUILD_MODE          - 构建模式：production / pre（默认 production，
+#                                  在镜像 build 阶段通过 --build-arg 固化到 /etc/build-mode，
+#                                  运行时 -e 覆盖无效）
 #   BUILD_ENV           - 部署环境标识（可选，传给 upload-mp.js 的 --env 参数）
 #   ROBOT               - 机器人编号（可选）
 #   BUILDER             - 构建人名称（可选，会显示在上传描述中）
@@ -86,7 +88,16 @@ fi
 
 # 设置默认值
 ACTION="${ACTION:-upload}"
-BUILD_MODE="${BUILD_MODE:-production}"
+
+# BUILD_MODE 在镜像构建时固化到 /etc/build-mode，运行时不可通过 -e 覆盖
+# 镜像文件存在 → 静默覆盖 env（任何 `docker run -e BUILD_MODE=...` 都被忽略）
+# 镜像文件不存在 → 旧镜像兼容，按 env 走，默认 production
+if [ -f /etc/build-mode ]; then
+    BUILD_MODE=$(cat /etc/build-mode)
+else
+    BUILD_MODE="${BUILD_MODE:-production}"
+fi
+
 BUILD_ENV="${BUILD_ENV:-development}"
 UPLOAD_OSS="${UPLOAD_OSS:-true}"
 SKIP_INSTALL="${SKIP_INSTALL:-false}"
@@ -189,7 +200,7 @@ if [ "$SKIP_BUILD" != "true" ]; then
     BUILD_START_TIME=$(date +%s)
 
     # 根据 BUILD_MODE 执行不同的构建命令
-    if [ "$BUILD_MODE" = "pre" ] || [ "$BUILD_MODE" = "test" ]; then
+    if [ "$BUILD_MODE" = "pre" ]; then
         print_info "执行预发布/测试构建: npm run build:pre"
         npm run build:pre
     else
@@ -252,7 +263,7 @@ echo ""
 print_info "准备执行 ${ACTION} 操作..."
 
 # 根据 BUILD_MODE 添加环境标识到描述
-if [ "$BUILD_MODE" = "pre" ] || [ "$BUILD_MODE" = "test" ]; then
+if [ "$BUILD_MODE" = "pre" ]; then
     ENV_TAG="[测试/预发布]"
 else
     ENV_TAG="[生产环境]"
